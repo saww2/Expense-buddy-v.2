@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Expense Buddy Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Gochi+Hand&family=Inter:wght@300;400;500;600&family=Poppins:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        beige: '#FAF5EE',
+                        softblue: '#A8D8EA',
+                        lightgreen: '#AAE3E2',
+                        darkbg: '#1E293B',
+                        darkcard: '#334155',
+                        pink: {
+                            400: '#F472B6',
+                            500: '#EC4899',
+                        },
+                        purple: {
+                            500: '#A855F7',
+                            400: '#C084FC',
+                        },
+                        teal: {
+                            300: '#5EEAD4',
+                        },
+                        emerald: {
+                            400: '#34D399',
+                        },
+                        amber: {
+                            400: '#FBBF24',
+                        }
+                    },
+                    fontFamily: {
+                        handwritten: ['Gochi Hand', 'cursive'],
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                    animation: {
+                        'fade-in': 'fadeIn 0.3s ease-in-out',
+                        'slide-up': 'slideUp 0.3s ease-out',
+                        'bounce-slow': 'bounceSlow 2s infinite',
+                        'pulse-slow': 'pulseSlow 3s infinite',
+                    },
+                    keyframes: {
+                        fadeIn: {
+                            '0%': { opacity: '0' },
+                            '100%': { opacity: '1' },
+                        },
+                        slideUp: {
+                            '0%': { transform: 'translateY(20px)', opacity: '0' },
+                            '100%': { transform: 'translateY(0)', opacity: '1' },
+                        },
+                        bounceSlow: {
+                            '0%, 100%': { 
+                                transform: 'translateX(-25%)',
+                                'animation-timing-function': 'cubic-bezier(0.8,0,1,1)'
+                            },
+                            '50%': {
+                                transform: 'translateX(0)',
+                                'animation-timing-function': 'cubic-bezier(0,0,0.2,1)'
+                            }
+                        },
+                        pulseSlow: {
+                            '0%, 100%': { opacity: '1' },
+                            '50%': { opacity: '0.6' },
+                        },
+                        spin: {
+                            '0%': { transform: 'rotate(0deg)' },
+                            '100%': { transform: 'rotate(360deg)' },
+                        },
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-10px)' },
+                        },
+                        slideIn: {
+                            '0%': { transform: 'translateX(100%)', opacity: '0' },
+                            '100%': { transform: 'translateX(0)', opacity: '1' },
+                        },
+                        slideOut: {
+                            '0%': { transform: 'translateX(0)', opacity: '1' },
+                            '100%': { transform: 'translateX(-100%)', opacity: '0' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .card-shadow {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+        .dark .card-shadow {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+        .playful-border {
+            border-radius: 20px;
+        }
+        .icon-circle {
+            width: 48px;
+            height: 48px;
+            min-width: 48px;
+            min-height: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .add-button {
+            transition: all 0.2s ease;
+        }
+        .add-button:hover {
+            transform: scale(1.1);
+        }
+        .expense-item {
+            transition: all 0.3s ease;
+        }
+        .expense-item-enter {
+            animation: fadeIn 0.3s forwards, slideUp 0.3s forwards;
+        }
+        .expense-item-exit {
+            animation: fadeIn 0.3s reverse forwards, slideUp 0.3s reverse forwards;
+        }
+        .category-chip {
+            transition: all 0.2s ease;
+        }
+        .category-chip:hover {
+            transform: translateY(-2px);
+        }
+        .progress-ring {
+            transition: stroke-dashoffset 0.5s ease;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        /* iPhone specific styles */
+        @supports (-webkit-touch-callout: none) {
+            input, select, textarea {
+                font-size: 1rem !important;
+            }
+            input:focus, textarea:focus {
+                font-size: 1rem !important;
+            }
+            
+            /* Minimum tap target size */
+            button, [role="button"], .icon-circle {
+                min-width: 44px;
+                min-height: 44px;
+            }
+            
+            /* Prevent zoom on input focus */
+            @media screen and (-webkit-min-device-pixel-ratio:0) {
+                input, textarea, select {
+                    font-size: 16px;
+                }
+            }
+        }
+        
+        /* Safe area insets for iPhone X and newer */
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(12px, env(safe-area-inset-left));
+                padding-right: max(12px, env(safe-area-inset-right));
+            }
+        }
+        
+        /* Better touch targets */
+        button, [role="button"] {
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        /* Safe area insets for iPhone notch */
+        body {
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        /* Responsive adjustments for all phone screens */
+        @media (max-width: 640px) {
+            #accounts-screen, #settings-screen {
+                padding: 0.75rem;
+            }
+            .playful-border {
+                border-radius: 16px;
+            }
+            #expense-name, #expense-amount {
+                padding: 0.75rem;
+                font-size: 1rem;
+                min-height: 48px;
+            }
+            .icon-circle {
+                width: 44px;
+                height: 44px;
+                min-width: 44px;
+                min-height: 44px;
+            }
+            #start-screen h1 {
+                font-size: 2.5rem;
+                margin-top: 1rem;
+            }
+            .bottom-navigation {
+                padding: 0.5rem;
+            }
+            .bottom-navigation button {
+                min-width: 60px;
+            }
+            #salary-display, #remaining-amount {
+                font-size: 2rem;
+            }
+            .category-chips {
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+            }
+        }
+        
+        /* Prevent iOS form zooming */
+        input, textarea, select {
+            font-size: 16px;
+            max-height: 3em;
+        }
+        
+        /* Fix for iOS input shadow */
+        input, textarea {
+            -webkit-appearance: none;
+            border-radius: 0;
+        }
+    </style>
+</head>
+<body class="h-full bg-beige dark:bg-darkbg transition-colors duration-300 font-poppins" style="min-height: -webkit-fill-available;">
+    <div id="app" class="min-h-full flex flex-col" style="min-height: -webkit-fill-available;">
+        <!-- Start Screen -->
+        <div id="start-screen" class="flex flex-col items-center justify-center h-full p-6 transition-all duration-300 ease-in-out transform">
+            <div class="text-center mb-8">
+                <div class="w-32 h-32 bg-gradient-to-br from-softblue to-lightgreen rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <i class="fas fa-wallet text-white text-5xl"></i>
+                </div>
+                <h1 class="text-4xl sm:text-5xl font-handwritten text-gray-800 dark:text-gray-200 mb-2">Expense Buddy</h1>
+                <p class="text-gray-600 dark:text-gray-300">Track your spending with ease</p>
+            </div>
+            
+            <div class="flex-1 flex flex-col items-center justify-center w-full">
+                <div class="bg-white dark:bg-darkcard p-6 sm:p-8 rounded-3xl card-shadow w-full max-w-md playful-border mx-4 relative overflow-hidden">
+                    <div class="absolute -top-10 -right-10 w-24 h-24 bg-purple-400 rounded-full opacity-10"></div>
+                    <div class="absolute -bottom-10 -left-10 w-20 h-20 bg-pink-400 rounded-full opacity-10"></div>
+                    
+                    <h2 class="text-3xl font-handwritten text-center text-gray-700 dark:text-gray-200 mb-6 relative z-10">Let's get started!</h2>
+                    <button onclick="showAccountsScreen()" class="w-20 h-20 bg-gradient-to-br from-softblue to-lightgreen hover:from-blue-400 hover:to-teal-300 text-white rounded-full flex items-center justify-center transition-all duration-300 add-button mx-auto shadow-xl relative z-10 hover:shadow-2xl hover:scale-110" style="animation: float 3s cubic-bezier(0.5, 0, 0.5, 1) infinite;">
+                        <i class="fas fa-play text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <p class="text-gray-500 dark:text-gray-400 mt-auto mb-4 flex items-center">
+                <i class="fas fa-heart text-pink-400 mr-2 animate-pulse-slow"></i>
+                Your friendly expense tracker
+            </p>
+        </div>
+
+        <!-- Accounts Screen -->
+        <div id="accounts-screen" class="hidden flex-col h-full p-4 sm:p-6 transition-all duration-300 ease-in-out transform">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center">
+                    <button onclick="showStartScreen()" class="icon-circle bg-softblue text-white mr-4 hover:bg-blue-400 transition-colors">
+                        <i class="fas fa-arrow-left animate-bounce-slow"></i>
+                    </button>
+                    <button onclick="showSettingsScreen()" class="icon-circle bg-pink-400 text-white hover:bg-pink-500 transition-colors">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+                <h1 class="text-3xl font-handwritten text-gray-800 dark:text-gray-200">My Expenses</h1>
+                <div class="w-12"></div> <!-- Spacer to balance the flex layout -->
+            </div>
+
+            <div class="bg-white dark:bg-darkcard p-4 sm:p-6 rounded-3xl card-shadow mb-6 playful-border relative overflow-hidden">
+                <div class="absolute -top-10 -right-10 w-24 h-24 bg-purple-400 rounded-full opacity-10"></div>
+                
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">Total Budget</h2>
+                    <button id="edit-salary-btn" class="icon-circle bg-softblue text-white hover:bg-blue-400 transition-colors">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                </div>
+                <div id="salary-display" class="text-3xl font-bold text-gray-800 dark:text-white">$0.00</div>
+                <div id="salary-edit" class="hidden mt-4">
+                    <div class="flex items-center">
+                        <span class="text-gray-600 dark:text-gray-300 mr-2">$</span>
+                        <input type="number" id="salary-input" class="flex-1 p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-transparent text-gray-800 dark:text-white" placeholder="Enter your budget" inputmode="decimal">
+                    </div>
+                    <div class="flex justify-end mt-3 space-x-2">
+                        <button onclick="cancelEditSalary()" class="px-4 py-2 rounded-xl bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">Cancel</button>
+                        <button onclick="saveSalary()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-300 text-white hover:from-emerald-500 hover:to-teal-400 transition-colors">Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Budget Progress -->
+            <div class="bg-white dark:bg-darkcard p-4 sm:p-6 rounded-3xl card-shadow mb-6 playful-border">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">Budget Progress</h2>
+                    <span id="progress-percentage" class="text-lg font-medium text-gray-800 dark:text-gray-200">0%</span>
+                </div>
+                <div class="relative">
+                    <div class="w-full bg-gray-200 dark:bg-gray-600 rounded-full h-4">
+                        <div id="progress-bar" class="bg-gradient-to-r from-softblue to-lightgreen h-4 rounded-full" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expense Categories -->
+            <div class="bg-white dark:bg-darkcard p-4 sm:p-6 rounded-3xl card-shadow mb-6 playful-border">
+                <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300 mb-4">Categories</h2>
+                <div class="category-chips grid grid-cols-4 gap-2">
+                    <button onclick="setExpenseCategory('food')" class="category-chip bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 px-3 py-2 rounded-full text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-utensils mr-1"></i> Food
+                    </button>
+                    <button onclick="setExpenseCategory('shopping')" class="category-chip bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 px-3 py-2 rounded-full text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-shopping-bag mr-1"></i> Shopping
+                    </button>
+                    <button onclick="setExpenseCategory('transport')" class="category-chip bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 px-3 py-2 rounded-full text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-bus mr-1"></i> Transport
+                    </button>
+                    <button onclick="setExpenseCategory('entertainment')" class="category-chip bg-purple-100 dark:bg-purple-900 text-purple-600 dark:text-purple-300 px-3 py-2 rounded-full text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-gamepad mr-1"></i> Fun
+                    </button>
+                    <button onclick="setExpenseCategory('bills')" class="category-chip bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 px-3 py-2 rounded-full text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-file-invoice-dollar mr-1"></i> Bills
+                    </button>
+                    <button onclick="setExpenseCategory('health')" class="category-chip bg-pink-100 dark:bg-pink-900 text-pink-600 dark:text-pink-300 px-3 py-2 rounded-full text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-heartbeat mr-1"></i> Health
+                    </button>
+                    <button onclick="setExpenseCategory('education')" class="category-chip bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-300 px-3 py-2 rounded-full text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-book mr-1"></i> Education
+                    </button>
+                    <button onclick="setExpenseCategory('other')" class="category-chip bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 px-3 py-2 rounded-full text-sm font-medium flex items-center justify-center">
+                        <i class="fas fa-ellipsis-h mr-1"></i> Other
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex-1 overflow-y-auto mb-4 px-1">
+                <div class="flex justify-between items-center mb-3 px-2">
+                    <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">Recent Expenses</h2>
+                    <button onclick="showImportanceAssignmentModal()" class="px-3 py-1 bg-gradient-to-r from-purple-400 to-pink-400 text-white rounded-lg text-sm hover:from-purple-500 hover:to-pink-500 transition-colors">
+                        Assign Importance
+                    </button>
+                </div>
+                <div id="expenses-list" class="space-y-3">
+                    <!-- Expenses will be added here dynamically -->
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-darkcard p-6 rounded-3xl card-shadow mb-6 playful-border">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">Remaining</h2>
+                    <div id="remaining-amount" class="text-3xl font-bold text-lightgreen dark:text-green-300">$0.00</div>
+                </div>
+            </div>
+
+            <div class="bg-white dark:bg-darkcard p-4 rounded-3xl card-shadow playful-border">
+                <div class="flex flex-col space-y-2">
+                    <div class="flex items-center space-x-2">
+                        <input type="text" id="expense-name" class="flex-1 p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-transparent text-gray-800 dark:text-white text-base min-h-[44px]" placeholder="Item name" inputmode="text">
+                        <input type="number" id="expense-amount" class="w-28 p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-transparent text-gray-800 dark:text-white text-base min-h-[44px]" placeholder="Price" inputmode="decimal">
+                    </div>
+                    <input type="hidden" id="expense-category" value="other">
+                    <button onclick="addExpense()" class="icon-circle bg-gradient-to-br from-emerald-400 to-teal-300 text-white add-button mx-auto shadow-lg hover:shadow-xl transition-all" style="width: 56px; height: 56px; min-width: 56px; min-height: 56px;">
+                        <i class="fas fa-plus text-xl"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Screen -->
+        <div id="settings-screen" class="hidden flex-col h-full p-4 sm:p-6 transition-all duration-300 ease-in-out transform">
+            <div class="flex items-center mb-6">
+                <button onclick="showAccountsScreen()" class="icon-circle bg-softblue text-white mr-4 hover:bg-blue-400 transition-colors">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <h1 class="text-3xl font-handwritten text-gray-800 dark:text-gray-200">Settings</h1>
+            </div>
+
+            <div class="bg-white dark:bg-darkcard p-6 rounded-3xl card-shadow mb-6 playful-border">
+                <div class="flex items-center justify-between mb-4 p-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <div class="flex items-center">
+                        <div class="icon-circle bg-purple-500 text-white mr-3">
+                            <i class="fas fa-moon"></i>
+                        </div>
+                        <span class="text-lg text-gray-700 dark:text-gray-300">Dark Mode</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="dark-mode-toggle" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-purple-500"></div>
+                    </label>
+                </div>
+                
+                <div class="flex items-center justify-between mb-4">
+                    <div class="flex items-center">
+                        <div class="icon-circle bg-amber-400 text-white mr-3">
+                            <i class="fas fa-bell"></i>
+                        </div>
+                        <span class="text-lg text-gray-700 dark:text-gray-300">Notifications</span>
+                    </div>
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="notifications-toggle" class="sr-only peer" checked>
+                        <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-pink-400"></div>
+                    </label>
+                </div>
+                
+            </div>
+            
+            <div class="bg-white dark:bg-darkcard p-6 rounded-3xl card-shadow mb-6 playful-border">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">Importance System</h2>
+                    <button onclick="assignSelectedExpenses()" class="px-4 py-2 bg-gradient-to-r from-purple-400 to-pink-400 text-white rounded-xl hover:from-purple-500 hover:to-pink-500 transition-colors">
+                        Assign Selected
+                    </button>
+                </div>
+                <div class="space-y-3">
+                    <div class="importance-category bg-red-100 dark:bg-red-900 p-3 rounded-xl">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex items-center">
+                                <h3 class="font-medium text-red-600 dark:text-red-300">Urgent</h3>
+                                <button onclick="showImportanceExpenses('urgent')" class="ml-2 text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                <button onclick="showAddExpenseModal('urgent')" class="ml-2 text-red-400 hover:text-red-600 dark:hover:text-red-300 transition-colors">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="rating-stars" data-category="urgent">
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="1"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="2"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="3"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="4"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="5"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-red-500 dark:text-red-400">Critical expenses that need immediate attention</p>
+                        <div id="urgent-expenses-count" class="text-xs mt-2 text-red-600 dark:text-red-300">
+                            ${expenses.filter(e => e.importance === 'urgent').length} expenses
+                        </div>
+                    </div>
+                    
+                    <div class="importance-category bg-blue-100 dark:bg-blue-900 p-3 rounded-xl">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex items-center">
+                                <h3 class="font-medium text-blue-600 dark:text-blue-300">Not Urgent</h3>
+                                <button onclick="showImportanceExpenses('notUrgent')" class="ml-2 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                <button onclick="showAddExpenseModal('notUrgent')" class="ml-2 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="rating-stars" data-category="notUrgent">
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="1"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="2"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="3"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="4"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="5"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-blue-500 dark:text-blue-400">Important but can wait</p>
+                        <div id="notUrgent-expenses-count" class="text-xs mt-2 text-blue-600 dark:text-blue-300">
+                            ${expenses.filter(e => e.importance === 'notUrgent').length} expenses
+                        </div>
+                    </div>
+                    
+                    <div class="importance-category bg-green-100 dark:bg-green-900 p-3 rounded-xl">
+                        <div class="flex justify-between items-center mb-2">
+                            <div class="flex items-center">
+                                <h3 class="font-medium text-green-600 dark:text-green-300">Extra</h3>
+                                <button onclick="showImportanceExpenses('extra')" class="ml-2 text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
+                                    <i class="fas fa-list"></i>
+                                </button>
+                                <button onclick="showAddExpenseModal('extra')" class="ml-2 text-green-400 hover:text-green-600 dark:hover:text-green-300 transition-colors">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="rating-stars" data-category="extra">
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="1"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="2"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="3"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="4"></i>
+                                <i class="fas fa-star text-yellow-400 cursor-pointer" data-rating="5"></i>
+                            </div>
+                        </div>
+                        <p class="text-sm text-green-500 dark:text-green-400">Non-essential expenses</p>
+                        <div id="extra-expenses-count" class="text-xs mt-2 text-green-600 dark:text-green-300">
+                            ${expenses.filter(e => e.importance === 'extra').length} expenses
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-auto text-center text-gray-500 dark:text-gray-400 mb-4 flex flex-col items-center">
+                <div class="flex items-center justify-center space-x-2 mb-2">
+                    <i class="fas fa-code text-amber-400"></i>
+                    <span>Expense Buddy Pro v1.1</span>
+                </div>
+                <div class="text-sm">Made with <i class="fas fa-heart text-pink-400"></i> for budget-conscious people</div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation -->
+        <div class="bg-white dark:bg-darkcard p-2 card-shadow safe-area-padding bottom-navigation" style="padding-bottom: env(safe-area-inset-bottom); margin-top: auto;">
+            <div class="flex justify-around items-center">
+                <button onclick="showAccountsScreen()" class="flex flex-col items-center px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <div class="w-10 h-10 bg-gradient-to-br from-softblue to-lightgreen rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all">
+                        <i class="fas fa-home text-white"></i>
+                    </div>
+                    <span class="text-xs mt-1 text-softblue dark:text-lightgreen font-medium">Home</span>
+                </button>
+                <button onclick="showAddExpenseModal()" class="flex flex-col items-center -mt-8">
+                    <div class="w-16 h-16 bg-gradient-to-br from-emerald-400 to-teal-300 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all">
+                        <i class="fas fa-plus text-white text-xl"></i>
+                    </div>
+                </button>
+                <button onclick="showSettingsScreen()" class="flex flex-col items-center px-4 py-2 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                    <div class="w-10 h-10 bg-gradient-to-br from-pink-400 to-purple-500 rounded-full flex items-center justify-center shadow-md hover:shadow-lg transition-all">
+                        <i class="fas fa-cog text-white"></i>
+                    </div>
+                    <span class="text-xs mt-1 text-pink-500 dark:text-purple-300 font-medium">Settings</span>
+                </button>
+            </div>
+        </div>
+        
+        <!-- Add Expense Modal -->
+        <div id="add-expense-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden transition-opacity duration-300">
+            <div class="bg-white dark:bg-darkcard p-6 rounded-3xl w-full max-w-md mx-4 playful-border animate-slide-up">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">Add New Expense</h2>
+                    <button onclick="hideAddExpenseModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-1">Item Name</label>
+                        <input type="text" id="modal-expense-name" class="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-transparent text-gray-800 dark:text-white" placeholder="What did you spend on?">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-1">Amount</label>
+                        <input type="number" id="modal-expense-amount" class="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-transparent text-gray-800 dark:text-white" placeholder="0.00">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-1">Category</label>
+                        <select id="modal-expense-category" class="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-transparent text-gray-800 dark:text-white">
+                            <option value="food">Food</option>
+                            <option value="shopping">Shopping</option>
+                            <option value="transport">Transport</option>
+                            <option value="entertainment">Entertainment</option>
+                            <option value="bills">Bills</option>
+                            <option value="health">Health</option>
+                            <option value="education">Education</option>
+                            <option value="other" selected>Other</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-gray-700 dark:text-gray-300 mb-1">Date</label>
+                        <input type="date" id="modal-expense-date" class="w-full p-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-transparent text-gray-800 dark:text-white">
+                    </div>
+                    <input type="hidden" id="modal-importance" value="">
+                </div>
+                
+                <button onclick="addExpenseFromModal()" class="w-full bg-gradient-to-r from-emerald-400 to-teal-300 text-white py-3 rounded-xl mt-6 hover:from-emerald-500 hover:to-teal-400 transition-colors">
+                    Add Expense
+                </button>
+            </div>
+        </div>
+        
+        <!-- Confirmation Modal -->
+        <div id="confirmation-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden transition-opacity duration-300">
+            <div class="bg-white dark:bg-darkcard p-6 rounded-3xl w-full max-w-md mx-4 playful-border animate-slide-up">
+                <div class="text-center mb-4">
+                    <i id="confirmation-icon" class="fas fa-exclamation-circle text-4xl text-red-500 mb-3"></i>
+                    <h2 id="confirmation-title" class="text-xl font-medium text-gray-700 dark:text-gray-300">Confirm Action</h2>
+                    <p id="confirmation-message" class="text-gray-600 dark:text-gray-400 mt-2">Are you sure you want to perform this action?</p>
+                </div>
+                
+                <div class="flex justify-center space-x-4 mt-6">
+                    <button id="confirmation-cancel" class="px-6 py-2 bg-gray-200 dark:bg-gray-600 text-gray-800 dark:text-white rounded-xl hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors">
+                        Cancel
+                    </button>
+                    <button id="confirmation-confirm" class="px-6 py-2 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors">
+                        Confirm
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Importance Assignment Modal -->
+        <div id="importance-assignment-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white dark:bg-darkcard p-6 rounded-3xl w-full max-w-md mx-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">Assign Importance</h2>
+                    <button onclick="hideImportanceAssignmentModal()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="space-y-4">
+                    <button onclick="assignSelectedExpenses('urgent')" class="w-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 p-4 rounded-xl text-left font-medium hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                        <i class="fas fa-exclamation-triangle mr-2"></i> Urgent
+                    </button>
+                    <button onclick="assignSelectedExpenses('notUrgent')" class="w-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-4 rounded-xl text-left font-medium hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                        <i class="fas fa-clock mr-2"></i> Not Urgent
+                    </button>
+                    <button onclick="assignSelectedExpenses('extra')" class="w-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 p-4 rounded-xl text-left font-medium hover:bg-green-200 dark:hover:bg-green-800 transition-colors">
+                        <i class="fas fa-star mr-2"></i> Extra
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // App state
+        let salary = 0;
+        let expenses = [];
+        let darkMode = false;
+        let notificationsEnabled = true;
+        let selectedCategory = 'other';
+
+        // DOM elements
+        const startScreen = document.getElementById('start-screen');
+        const accountsScreen = document.getElementById('accounts-screen');
+        const settingsScreen = document.getElementById('settings-screen');
+        const salaryDisplay = document.getElementById('salary-display');
+        const salaryEdit = document.getElementById('salary-edit');
+        const editSalaryBtn = document.getElementById('edit-salary-btn');
+        const salaryInput = document.getElementById('salary-input');
+        const expensesList = document.getElementById('expenses-list');
+        const remainingAmount = document.getElementById('remaining-amount');
+        const expenseName = document.getElementById('expense-name');
+        const expenseAmount = document.getElementById('expense-amount');
+        const expenseCategory = document.getElementById('expense-category');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        const notificationsToggle = document.getElementById('notifications-toggle');
+        const reportsToggle = document.getElementById('reports-toggle');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercentage = document.getElementById('progress-percentage');
+        const addExpenseModal = document.getElementById('add-expense-modal');
+        const modalExpenseName = document.getElementById('modal-expense-name');
+        const modalExpenseAmount = document.getElementById('modal-expense-amount');
+        const modalExpenseCategory = document.getElementById('modal-expense-category');
+        const modalExpenseDate = document.getElementById('modal-expense-date');
+        const confirmationModal = document.getElementById('confirmation-modal');
+        const confirmationTitle = document.getElementById('confirmation-title');
+        const confirmationMessage = document.getElementById('confirmation-message');
+        const confirmationIcon = document.getElementById('confirmation-icon');
+        const confirmationCancel = document.getElementById('confirmation-cancel');
+        const confirmationConfirm = document.getElementById('confirmation-confirm');
+
+        // Category icons mapping
+        const categoryIcons = {
+            'food': 'fa-utensils',
+            'shopping': 'fa-shopping-bag',
+            'transport': 'fa-bus',
+            'entertainment': 'fa-gamepad',
+            'bills': 'fa-file-invoice-dollar',
+            'health': 'fa-heartbeat',
+            'education': 'fa-book',
+            'other': 'fa-ellipsis-h'
+        };
+
+        // Category colors mapping
+        const categoryColors = {
+            'food': { bg: 'bg-red-100 dark:bg-red-900', text: 'text-red-600 dark:text-red-300' },
+            'shopping': { bg: 'bg-blue-100 dark:bg-blue-900', text: 'text-blue-600 dark:text-blue-300' },
+            'transport': { bg: 'bg-green-100 dark:bg-green-900', text: 'text-green-600 dark:text-green-300' },
+            'entertainment': { bg: 'bg-purple-100 dark:bg-purple-900', text: 'text-purple-600 dark:text-purple-300' },
+            'bills': { bg: 'bg-yellow-100 dark:bg-yellow-900', text: 'text-yellow-600 dark:text-yellow-300' },
+            'health': { bg: 'bg-pink-100 dark:bg-pink-900', text: 'text-pink-600 dark:text-pink-300' },
+            'education': { bg: 'bg-indigo-100 dark:bg-indigo-900', text: 'text-indigo-600 dark:text-indigo-300' },
+            'other': { bg: 'bg-gray-100 dark:bg-gray-700', text: 'text-gray-600 dark:text-gray-300' }
+        };
+
+        // Initialize app
+        function init() {
+            loadData();
+            updateUI();
+            setupEventListeners();
+            
+            // Initialize dark mode toggle
+            darkModeToggle.checked = darkMode;
+            if (darkMode) {
+                document.documentElement.classList.add('dark');
+            }
+            notificationsToggle.checked = notificationsEnabled;
+            
+            // Set today's date as default in modal
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            modalExpenseDate.value = formattedDate;
+            
+            // Setup rating stars
+            document.querySelectorAll('.rating-stars i').forEach(star => {
+                star.addEventListener('click', function() {
+                    const rating = parseInt(this.getAttribute('data-rating'));
+                    const category = this.parentElement.getAttribute('data-category');
+                    setRating(category, rating);
+                });
+            });
+        }
+        
+        // Set rating for importance category
+        function setRating(category, rating) {
+            const stars = document.querySelectorAll(`.rating-stars[data-category="${category}"] i`);
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.add('text-yellow-500', 'fas');
+                    star.classList.remove('text-yellow-400', 'far');
+                } else {
+                    star.classList.add('text-yellow-400', 'far');
+                    star.classList.remove('text-yellow-500', 'fas');
+                }
+            });
+            showToast(`${category === 'urgent' ? 'Urgent' : category === 'notUrgent' ? 'Not Urgent' : 'Extra'} rated ${rating}/5`);
+        }
+
+        // Load data from localStorage
+        function loadData() {
+            const savedSalary = localStorage.getItem('expenseBuddySalary');
+            const savedExpenses = localStorage.getItem('expenseBuddyExpenses');
+            const savedDarkMode = localStorage.getItem('expenseBuddyDarkMode');
+            const savedNotifications = localStorage.getItem('expenseBuddyNotifications');
+
+            if (savedSalary) {
+                salary = parseFloat(savedSalary);
+            }
+
+            if (savedExpenses) {
+                expenses = JSON.parse(savedExpenses);
+            }
+
+            darkMode = savedDarkMode === 'true';
+            if (darkMode) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            notificationsEnabled = savedNotifications !== 'false';
+        }
+
+        // Save data to localStorage
+        function saveData() {
+            localStorage.setItem('expenseBuddySalary', salary.toString());
+            localStorage.setItem('expenseBuddyExpenses', JSON.stringify(expenses));
+            localStorage.setItem('expenseBuddyDarkMode', darkMode);
+            localStorage.setItem('expenseBuddyNotifications', notificationsEnabled);
+        }
+
+        // Update UI based on current state
+        function updateUI() {
+            // Update salary display
+            salaryDisplay.textContent = `$${salary.toFixed(2)}`;
+            
+            // Calculate total expenses
+            const totalExpenses = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+            
+            // Update progress bar
+            const progress = salary > 0 ? Math.min((totalExpenses / salary) * 100, 100) : 0;
+            progressBar.style.width = `${progress}%`;
+            progressPercentage.textContent = `${Math.round(progress)}%`;
+            
+            // Force progress bar update by triggering reflow
+            progressBar.offsetHeight;
+            
+            // Color progress bar based on value with smooth transitions
+            progressBar.classList.remove('from-softblue', 'to-lightgreen', 'from-amber-400', 'to-orange-400', 'from-pink-400', 'to-red-500');
+            
+            if (progress >= 80) {
+                progressBar.classList.add('from-pink-400', 'to-red-500');
+                if (notificationsEnabled && progress >= 80 && progress < 81) {
+                    showToast('⚠️ Warning: You\'ve reached 80% of your budget!', 'text-red-500');
+                }
+            } else if (progress >= 50) {
+                progressBar.classList.add('from-amber-400', 'to-orange-400');
+            } else {
+                progressBar.classList.add('from-softblue', 'to-lightgreen');
+            }
+
+            // Update expenses list
+            expensesList.innerHTML = '';
+            
+            if (expenses.length === 0) {
+                expensesList.innerHTML = `
+                    <div class="bg-white dark:bg-darkcard p-6 rounded-2xl card-shadow flex flex-col items-center justify-center text-center">
+                        <i class="fas fa-coins text-4xl text-gray-400 mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-700 dark:text-gray-300 mb-2">No expenses yet</h3>
+                        <p class="text-gray-500 dark:text-gray-400">Add your first expense to get started!</p>
+                    </div>
+                `;
+            } else {
+                // Sort expenses by date (newest first)
+                const sortedExpenses = [...expenses].sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                sortedExpenses.forEach((expense, index) => {
+                    const expenseDate = new Date(expense.date);
+                    const formattedDate = expenseDate.toLocaleDateString('en-US', { 
+                        month: 'short', 
+                        day: 'numeric',
+                        year: expenseDate.getFullYear() !== new Date().getFullYear() ? 'numeric' : undefined
+                    });
+                    
+                    const category = expense.category || 'other';
+                    const categoryIcon = categoryIcons[category];
+                    const categoryColor = categoryColors[category];
+                    
+                    const expenseItem = document.createElement('div');
+                    expenseItem.className = 'expense-item bg-white dark:bg-darkcard p-4 rounded-2xl card-shadow flex justify-between items-center expense-item-enter';
+                    expenseItem.innerHTML = `
+                        <div class="flex items-center">
+                            <div class="icon-circle ${categoryColor.bg} ${categoryColor.text} mr-3">
+                                <i class="fas ${categoryIcon}"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-medium text-gray-800 dark:text-gray-200">${expense.name}</h3>
+                                <p class="text-sm text-gray-500 dark:text-gray-400">${formattedDate}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <span class="text-lg font-medium text-gray-800 dark:text-gray-200 mr-3">$${expense.amount.toFixed(2)}</span>
+                            <div class="flex items-center">
+                                <button onclick="editExpense(${index})" class="icon-circle bg-yellow-100 dark:bg-yellow-900 text-yellow-600 dark:text-yellow-300 mr-2 hover:bg-yellow-200 dark:hover:bg-yellow-800 transition-colors">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button onclick="confirmDeleteExpense(${index})" class="icon-circle bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                                <input type="checkbox" class="expense-checkbox ml-2" data-index="${index}" style="width: 18px; height: 18px;">
+                            </div>
+                        </div>
+                    `;
+                    expensesList.appendChild(expenseItem);
+                });
+            }
+            
+            // Update remaining amount
+            const remaining = salary - totalExpenses;
+            remainingAmount.textContent = `$${remaining.toFixed(2)}`;
+            
+            // Color remaining amount based on value
+            if (remaining < 0) {
+                remainingAmount.classList.remove('text-lightgreen', 'dark:text-green-300');
+                remainingAmount.classList.add('text-red-500', 'dark:text-red-400');
+            } else {
+                remainingAmount.classList.remove('text-red-500', 'dark:text-red-400');
+                remainingAmount.classList.add('text-lightgreen', 'dark:text-green-300');
+            }
+        }
+
+        // Setup event listeners
+        function setupEventListeners() {
+            // Edit salary button
+            editSalaryBtn.addEventListener('click', showEditSalary);
+            
+            // Dark mode toggle
+            darkModeToggle.addEventListener('change', () => {
+                darkMode = darkModeToggle.checked;
+                if (darkMode) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+                saveData();
+            });
+            
+            // Notifications toggle
+            notificationsToggle.addEventListener('change', () => {
+                notificationsEnabled = notificationsToggle.checked;
+                saveData();
+                if (notificationsEnabled) {
+                    showToast('Notifications enabled');
+                }
+            });
+            
+            
+            // Confirmation modal buttons
+            confirmationCancel.addEventListener('click', hideConfirmationModal);
+            
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    hideAddExpenseModal();
+                    hideConfirmationModal();
+                }
+            });
+        }
+        
+        // Show toast notification
+        function showToast(message, textColor = 'text-white') {
+            if (!notificationsEnabled) return;
+            
+            const toast = document.createElement('div');
+            toast.className = `fixed bottom-20 left-1/2 transform -translate-x-1/2 bg-gray-800 ${textColor} px-4 py-2 rounded-lg shadow-lg animate-slide-up z-50 flex items-center`;
+            
+            // Add icon if message starts with emoji
+            if (message.match(/^\p{Emoji}/u)) {
+                const icon = document.createElement('span');
+                icon.className = 'mr-2';
+                icon.textContent = message.match(/^\p{Emoji}/u)[0];
+                toast.appendChild(icon);
+                message = message.replace(/^\p{Emoji}\s?/u, '');
+            }
+            
+            const text = document.createElement('span');
+            text.textContent = message;
+            toast.appendChild(text);
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Screen navigation functions
+        // GSAP transitions
+        function showStartScreen() {
+            gsap.to(accountsScreen, { 
+                x: '100%', 
+                opacity: 0, 
+                duration: 0.5, 
+                ease: 'power3.inOut',
+                onComplete: () => {
+                    accountsScreen.classList.add('hidden');
+                    settingsScreen.classList.add('hidden');
+                }
+            });
+            gsap.to(settingsScreen, { 
+                x: '100%', 
+                opacity: 0, 
+                duration: 0.5, 
+                ease: 'power3.inOut'
+            });
+            
+            startScreen.classList.remove('hidden');
+            gsap.fromTo(startScreen, 
+                { x: '-100%', opacity: 0 },
+                { 
+                    x: '0%', 
+                    opacity: 1, 
+                    duration: 0.5, 
+                    ease: 'power3.inOut',
+                    onComplete: updateUI
+                }
+            );
+        }
+
+        function showAccountsScreen() {
+            gsap.to(startScreen, { 
+                x: '-100%', 
+                opacity: 0, 
+                duration: 0.5, 
+                ease: 'power3.inOut',
+                onComplete: () => {
+                    startScreen.classList.add('hidden');
+                    settingsScreen.classList.add('hidden');
+                }
+            });
+            gsap.to(settingsScreen, { 
+                x: '100%', 
+                opacity: 0, 
+                duration: 0.5, 
+                ease: 'power3.inOut'
+            });
+            
+            accountsScreen.classList.remove('hidden');
+            gsap.fromTo(accountsScreen, 
+                { x: '100%', opacity: 0 },
+                { 
+                    x: '0%', 
+                    opacity: 1, 
+                    duration: 0.5, 
+                    ease: 'power3.inOut',
+                    onComplete: updateUI
+                }
+            );
+        }
+
+        function showSettingsScreen() {
+            gsap.to(startScreen, { 
+                x: '-100%', 
+                opacity: 0, 
+                duration: 0.5, 
+                ease: 'power3.inOut',
+                onComplete: () => {
+                    startScreen.classList.add('hidden');
+                    accountsScreen.classList.add('hidden');
+                }
+            });
+            gsap.to(accountsScreen, { 
+                x: '-100%', 
+                opacity: 0, 
+                duration: 0.5, 
+                ease: 'power3.inOut'
+            });
+            
+            settingsScreen.classList.remove('hidden');
+            gsap.fromTo(settingsScreen, 
+                { x: '100%', opacity: 0 },
+                { 
+                    x: '0%', 
+                    opacity: 1, 
+                    duration: 0.5, 
+                    ease: 'power3.inOut'
+                }
+            );
+        }
+        
+        // Modal functions
+        function showAddExpenseModal(importance = null) {
+            // Clear previous inputs
+            modalExpenseName.value = '';
+            modalExpenseAmount.value = '';
+            modalExpenseCategory.value = 'other';
+            if (importance) {
+                document.getElementById('modal-importance').value = importance;
+            }
+            
+            // Set today's date
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            modalExpenseDate.value = formattedDate;
+            
+            addExpenseModal.classList.remove('hidden');
+            modalExpenseName.focus();
+        }
+        
+        function hideAddExpenseModal() {
+            addExpenseModal.classList.add('hidden');
+        }
+        
+        function showConfirmationModal(title, message, icon, confirmCallback) {
+            confirmationTitle.textContent = title;
+            confirmationMessage.textContent = message;
+            confirmationIcon.className = `fas ${icon} text-4xl mb-3`;
+            
+            // Remove previous event listeners
+            confirmationConfirm.replaceWith(confirmationConfirm.cloneNode(true));
+            
+            // Add new event listener
+            document.getElementById('confirmation-confirm').addEventListener('click', () => {
+                confirmCallback();
+                hideConfirmationModal();
+            });
+            
+            confirmationModal.classList.remove('hidden');
+        }
+        
+        function hideConfirmationModal() {
+            confirmationModal.classList.add('hidden');
+        }
+
+        // Expense functions
+        function cancelEditSalary() {
+            salaryEdit.classList.add('hidden');
+            salaryDisplay.classList.remove('hidden');
+        }
+        
+        function showEditSalary() {
+            salaryEdit.classList.remove('hidden');
+            salaryDisplay.classList.add('hidden');
+            salaryInput.value = salary;
+            salaryInput.focus();
+        }
+
+        function saveSalary() {
+            // Handle comma decimal separators
+            const sanitizedValue = salaryInput.value.replace(',', '.');
+            const newSalary = parseFloat(sanitizedValue) || 0;
+            
+            if (newSalary < 0) {
+                showToast('Budget cannot be negative');
+                return;
+            }
+            
+            salary = newSalary;
+            salaryEdit.classList.add('hidden');
+            salaryDisplay.classList.remove('hidden');
+            saveData();
+            updateUI();
+            showToast('Budget updated successfully');
+        }
+
+        function addExpense() {
+            const name = expenseName.value.trim();
+            // Handle comma decimal separators
+            const sanitizedValue = expenseAmount.value.replace(',', '.');
+            const amount = parseFloat(sanitizedValue) || 0;
+            
+            if (name && amount > 0) {
+                expenses.push({
+                    name,
+                    amount,
+                    date: new Date().toISOString(),
+                    category: selectedCategory
+                });
+                
+                expenseName.value = '';
+                expenseAmount.value = '';
+                selectedCategory = 'other';
+                
+                saveData();
+                updateUI();
+                showToast('Expense added successfully');
+                
+                // Scroll to top of expenses list
+                expensesList.scrollTo(0, 0);
+            } else {
+                if (!name) {
+                    showToast('Please enter an item name');
+                } else if (amount <= 0) {
+                    showToast('Please enter a valid amount');
+                }
+            }
+        }
+        
+        function addExpenseFromModal() {
+            const importance = document.getElementById('modal-importance').value;
+            const name = modalExpenseName.value.trim();
+            // Handle comma decimal separators
+            const sanitizedValue = modalExpenseAmount.value.replace(',', '.');
+            const amount = parseFloat(sanitizedValue) || 0;
+            const category = modalExpenseCategory.value;
+            const date = modalExpenseDate.value || new Date().toISOString();
+            
+            if (name && amount > 0) {
+                expenses.push({
+                    name,
+                    amount,
+                    date,
+                    category,
+                    importance
+                });
+                
+                hideAddExpenseModal();
+                saveData();
+                updateUI();
+                showToast('Expense added successfully');
+                
+                // Scroll to top of expenses list
+                expensesList.scrollTo(0, 0);
+            } else {
+                if (!name) {
+                    showToast('Please enter an item name');
+                } else if (amount <= 0) {
+                    showToast('Please enter a valid amount');
+                }
+            }
+        }
+
+        function editExpense(index) {
+            const expense = expenses[index];
+            showAddExpenseModal();
+            
+            // Fill modal with existing values
+            modalExpenseName.value = expense.name;
+            modalExpenseAmount.value = expense.amount;
+            modalExpenseCategory.value = expense.category || 'other';
+            
+            // Set the date if it exists
+            if (expense.date) {
+                const date = new Date(expense.date);
+                const formattedDate = date.toISOString().split('T')[0];
+                modalExpenseDate.value = formattedDate;
+            }
+            
+            // Change modal title and button
+            document.querySelector('#add-expense-modal h2').textContent = 'Edit Expense';
+            document.querySelector('#add-expense-modal button').textContent = 'Save Changes';
+            
+            // Remove previous click handler
+            const saveBtn = document.querySelector('#add-expense-modal button');
+            saveBtn.replaceWith(saveBtn.cloneNode(true));
+            
+            // Add new click handler
+            document.querySelector('#add-expense-modal button').addEventListener('click', () => {
+                const name = modalExpenseName.value.trim();
+                const sanitizedValue = modalExpenseAmount.value.replace(',', '.');
+                const amount = parseFloat(sanitizedValue) || 0;
+                const category = modalExpenseCategory.value;
+                const date = modalExpenseDate.value || new Date().toISOString();
+                
+                if (name && amount > 0) {
+                    expenses[index] = {
+                        name,
+                        amount,
+                        date,
+                        category
+                    };
+                    
+                    hideAddExpenseModal();
+                    saveData();
+                    updateUI();
+                    showToast('Expense updated successfully');
+                } else {
+                    if (!name) {
+                        showToast('Please enter an item name');
+                    } else if (amount <= 0) {
+                        showToast('Please enter a valid amount');
+                    }
+                }
+            });
+        }
+        
+        function confirmDeleteExpense(index) {
+            showConfirmationModal(
+                'Delete Expense',
+                'Are you sure you want to delete this expense? This action cannot be undone.',
+                'fa-exclamation-triangle text-yellow-500',
+                () => removeExpense(index)
+            );
+        }
+
+        function removeExpense(index) {
+            expenses.splice(index, 1);
+            saveData();
+            updateUI();
+            showToast('Expense removed successfully');
+        }
+        
+        function setExpenseCategory(category) {
+            selectedCategory = category;
+            expenseCategory.value = category;
+            showToast(`Category set to ${category.charAt(0).toUpperCase() + category.slice(1)}`);
+        }
+
+        // Data management functions
+        function exportData() {
+            const data = {
+                salary,
+                expenses,
+                settings: {
+                    darkMode,
+                    notificationsEnabled
+                }
+            };
+            
+            const dataStr = JSON.stringify(data, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            
+            const exportName = `expense-buddy-${new Date().toISOString().split('T')[0]}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportName);
+            linkElement.click();
+            
+            showToast('Data exported successfully');
+        }
+        
+        function importData() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.json';
+            
+            input.onchange = e => {
+                const file = e.target.files[0];
+                const reader = new FileReader();
+                
+                reader.onload = event => {
+                    try {
+                        const data = JSON.parse(event.target.result);
+                        
+                        showConfirmationModal(
+                            'Import Data',
+                            'This will replace all your current data. Are you sure?',
+                            'fa-exclamation-triangle text-yellow-500',
+                            () => {
+                                if (data.salary !== undefined) salary = data.salary;
+                                if (data.expenses !== undefined) expenses = data.expenses;
+                                
+                                if (data.settings) {
+                                    if (data.settings.darkMode !== undefined) {
+                                        darkMode = data.settings.darkMode;
+                                        document.documentElement.classList.toggle('dark', darkMode);
+                                        darkModeToggle.checked = darkMode;
+                                    }
+                                    
+                                    if (data.settings.notificationsEnabled !== undefined) {
+                                        notificationsEnabled = data.settings.notificationsEnabled;
+                                        notificationsToggle.checked = notificationsEnabled;
+                                    }
+                                    
+                                }
+                                
+                                saveData();
+                                updateUI();
+                                showToast('Data imported successfully');
+                            }
+                        );
+                    } catch (err) {
+                        showToast('Error importing data. Invalid file format.');
+                    }
+                };
+                
+                reader.readAsText(file);
+            };
+            
+            input.click();
+        }
+        
+        function resetData() {
+            showConfirmationModal(
+                'Reset All Data',
+                'This will permanently delete all your expenses and settings. Are you sure?',
+                'fa-exclamation-circle text-red-500',
+                () => {
+                    salary = 0;
+                    expenses = [];
+                    darkMode = false;
+                    notificationsEnabled = true;
+                    
+                    document.documentElement.classList.remove('dark');
+                    darkModeToggle.checked = false;
+                    notificationsToggle.checked = true;
+                    reportsToggle.checked = true;
+                    
+                    saveData();
+                    updateUI();
+                    showToast('All data has been reset');
+                }
+            );
+        }
+
+        // Show modal to assign importance to selected expenses
+        function showImportanceAssignmentModal() {
+            const checkboxes = document.querySelectorAll('.expense-checkbox:checked');
+            if (checkboxes.length === 0) {
+                showToast('No expenses selected');
+                return;
+            }
+
+            // Create modal to select importance
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-darkcard p-6 rounded-3xl w-full max-w-md mx-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">Assign Importance</h2>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <button onclick="assignImportanceToSelected('urgent')" class="w-full bg-red-100 dark:bg-red-900 text-red-600 dark:text-red-300 p-4 rounded-xl text-left font-medium hover:bg-red-200 dark:hover:bg-red-800 transition-colors">
+                            <i class="fas fa-exclamation-triangle mr-2"></i> Urgent
+                        </button>
+                        <button onclick="assignImportanceToSelected('notUrgent')" class="w-full bg-blue-100 dark:bg-blue-900 text-blue-600 dark:text-blue-300 p-4 rounded-xl text-left font-medium hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors">
+                            <i class="fas fa-clock mr-2"></i> Not Urgent
+                        </button>
+                        <button onclick="assignImportanceToSelected('extra')" class="w-full bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-300 p-4 rounded-xl text-left font-medium hover:bg-green-200 dark:hover:bg-green-800 transition-colors">
+                            <i class="fas fa-star mr-2"></i> Extra
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+        }
+
+        function showImportanceAssignmentModal() {
+            const checkboxes = document.querySelectorAll('.expense-checkbox:checked');
+            if (checkboxes.length === 0) {
+                showToast('Please select at least one expense');
+                return;
+            }
+            document.getElementById('importance-assignment-modal').classList.remove('hidden');
+        }
+
+        function hideImportanceAssignmentModal() {
+            document.getElementById('importance-assignment-modal').classList.add('hidden');
+        }
+
+        function assignSelectedExpenses(importance) {
+            const checkboxes = document.querySelectorAll('.expense-checkbox:checked');
+            checkboxes.forEach(checkbox => {
+                const index = parseInt(checkbox.getAttribute('data-index'));
+                expenses[index].importance = importance;
+                checkbox.checked = false; // Uncheck after assigning
+            });
+            
+            saveData();
+            updateUI();
+            hideImportanceAssignmentModal();
+            showToast(`${checkboxes.length} expense(s) assigned to ${importance === 'urgent' ? 'Urgent' : importance === 'notUrgent' ? 'Not Urgent' : 'Extra'}`);
+        }
+
+        // Show expenses by importance category
+        function showImportanceExpenses(category) {
+            const categoryName = category === 'urgent' ? 'Urgent' : 
+                              category === 'notUrgent' ? 'Not Urgent' : 'Extra';
+            
+            const filteredExpenses = expenses.filter(exp => exp.importance === category);
+            
+            if (filteredExpenses.length === 0) {
+                showToast(`No ${categoryName} expenses found`);
+                return;
+            }
+            
+            // Create a modal to display the expenses
+            const modal = document.createElement('div');
+            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.innerHTML = `
+                <div class="bg-white dark:bg-darkcard p-6 rounded-3xl w-full max-w-md mx-4 max-h-[80vh] overflow-y-auto">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-medium text-gray-700 dark:text-gray-300">${categoryName} Expenses</h2>
+                        <button onclick="this.parentElement.parentElement.parentElement.remove()" class="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-3">
+                        ${filteredExpenses.map(expense => `
+                            <div class="expense-item bg-white dark:bg-darkcard p-4 rounded-2xl card-shadow flex justify-between items-center">
+                                <div class="flex items-center">
+                                    <div class="icon-circle ${categoryColors[expense.category || 'other'].bg} ${categoryColors[expense.category || 'other'].text} mr-3">
+                                        <i class="fas ${categoryIcons[expense.category || 'other']}"></i>
+                                    </div>
+                                    <div>
+                                        <h3 class="font-medium text-gray-800 dark:text-gray-200">${expense.name}</h3>
+                                        <p class="text-sm text-gray-500 dark:text-gray-400">${new Date(expense.date).toLocaleDateString()}</p>
+                                    </div>
+                                </div>
+                                <span class="text-lg font-medium text-gray-800 dark:text-gray-200">${expense.amount.toFixed(2)}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(modal);
+        }
+
+        // Initialize the app when DOM is loaded
+        if (document.readyState !== 'loading') {
+            init();
+        } else {
+            document.addEventListener('DOMContentLoaded', init);
+        }
+    </script>
+<p style="border-radius: 8px; text-align: center; font-size: 12px; color: #fff; margin-top: 16px;position: fixed; left: 8px; bottom: 8px; z-index: 10; background: rgba(0, 0, 0, 0.8); padding: 4px 8px;">Made with <img src="https://enzostvs-deepsite.hf.space/logo.svg" alt="DeepSite Logo" style="width: 16px; height: 16px; vertical-align: middle;display:inline-block;margin-right:3px;filter:brightness(0) invert(1);"><a href="https://enzostvs-deepsite.hf.space" style="color: #fff;text-decoration: underline;" target="_blank" >DeepSite</a> - 🧬 <a href="https://enzostvs-deepsite.hf.space?remix=saw000001/expense-buddy-v-2" style="color: #fff;text-decoration: underline;" target="_blank" >Remix</a></p></body>
+</html>
